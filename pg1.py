@@ -3,14 +3,17 @@ import time
 import subprocess
 import win32com.client
 import tkinter as tk
-from tkinter import messagebox
 import pyautogui
+import threading
+import random
 
-# Define a flag to track the program's activation state and email checking
+# Define global variables
 program_active = False
 email_checking_active = False
 mouse_moving_active = False
 idle_time_threshold = 300  # 300 seconds (5 minutes) of idle time
+last_mouse_activity = 0  # Initialize the variable
+mouse_moving_thread = None  # Initialize the variable
 
 def execute_outlook():
     os.startfile("outlook")
@@ -18,7 +21,7 @@ def execute_outlook():
     print("Outlook is starting now...")
 
 def execute_teams():
-    os.startfile("teams")
+    os.system('C:/Users/Raghav/AppData/Local/Microsoft/Teams/Update.exe --processStart "Teams.exe"')
     time.sleep(5)
     print("Teams is starting now...")
 
@@ -48,32 +51,30 @@ def open_custom_dialog(subject, sender):
     got_it_button.pack(pady=10)
 
 def mouse_mover():
-    while mouse_moving_active:
-        pyautogui.move(1, 1)
-        time.sleep(60)  # Move the mouse cursor every 60 seconds
+    global mouse_moving_active
 
-def activate_program():
-    global program_active
-    if not program_active:
-        program_active = True
-        activation_label.config(text="Program is now at work, just sit back")
-        activate_button.config(bg="green")  # Change the button color when activated
-        deactivate_button.config(bg="SystemButtonFace")  # Reset the color of the Deactivate button
-        check_program_loop()
-        if email_checking_checkbox_var.get():  # If the email checking checkbox is marked, start periodic email checking
-            check_for_new_mail_periodically()
-        if mouse_moving_checkbox_var.get():  # If the mouse movement checkbox is marked, start moving the mouse
-            mouse_moving_active = True
-            mouse_mover()
+    while True:
+        if mouse_moving_active and mouse_moving_checkbox_var.get():
+            screen_width, screen_height = pyautogui.size()
+            x = random.randint(0, screen_width)
+            y = random.randint(0, screen_height)
+            pyautogui.moveTo(x, y, duration=5)
+            time.sleep(30)  # Move the mouse cursor every 60 seconds
+        else:
+            time.sleep(15)
+            if not mouse_moving_active or not mouse_moving_checkbox_var.get():
+                while not mouse_moving_active or not mouse_moving_checkbox_var.get():
+                    time.sleep(1)
+                    if mouse_moving_active and mouse_moving_checkbox_var.get():
+                        break
+                if not mouse_moving_active or not mouse_moving_checkbox_var.get():
+                    continue
 
-def deactivate_program():
-    global program_active
-    if program_active:
-        program_active = False
-        activation_label.config(text="Program voluntarily deactivated, thanks for using")
-        deactivate_button.config(bg="red")  # Change the button color when deactivated
-        activate_button.config(bg="SystemButtonFace")  # Reset the color of the Activate button
-        mouse_moving_active = False  # Stop moving the mouse when the program is deactivated
+def update_activation_label():
+    if program_active or email_checking_active or mouse_moving_active:
+        activation_label.config(text="Work is being done, be patient!")
+    else:
+        activation_label.config(text="Program is not active")
 
 def toggle_email_checking():
     global email_checking_active
@@ -83,17 +84,61 @@ def toggle_email_checking():
             check_for_new_mail_periodically()  # Start periodic email checking
     else:
         email_checking_active = False
+    update_activation_label()
 
 def toggle_mouse_moving():
-    global mouse_moving_active
+    global mouse_moving_active, mouse_moving_thread
+
     if mouse_moving_checkbox_var.get():
         mouse_moving_active = True
-        if program_active:
-            mouse_mover()  # Start moving the mouse cursor
+
+        if not mouse_moving_thread:
+            # Start the mouse_mover in a separate thread
+            mouse_moving_thread = threading.Thread(target=mouse_mover)
+            mouse_moving_thread.daemon = True
+            mouse_moving_thread.start()
     else:
         mouse_moving_active = False
+    update_activation_label()
+
+def activate_program():
+    global program_active, last_mouse_activity, mouse_moving_thread
+
+    if not program_active:
+        program_active = True
+        last_mouse_activity = time.time()  # Initialize last_mouse_activity
+        activate_button.config(bg="green")  # Change the button color when activated
+        deactivate_button.config(bg="SystemButtonFace")  # Reset the color of the Deactivate button
+
+        # Start the check_program_loop in a separate thread
+        program_thread = threading.Thread(target=check_program_loop)
+        program_thread.daemon = True
+        program_thread.start()
+
+        if email_checking_checkbox_var.get():
+            check_for_new_mail_periodically()
+
+        if mouse_moving_checkbox_var.get():
+            mouse_moving_active = True
+
+            if not mouse_moving_thread:
+                # Start the mouse_mover in a separate thread
+                mouse_moving_thread = threading.Thread(target=mouse_mover)
+                mouse_moving_thread.daemon = True
+                mouse_moving_thread.start()
+
+    update_activation_label()
+
+def deactivate_program():
+    global program_active
+    if program_active:
+        program_active = False
+        activate_button.config(bg="SystemButtonFace")  # Reset the color of the Activate button
+        deactivate_button.config(bg="red")  # Change the button color when deactivated
+    update_activation_label()
 
 def check_program_loop():
+    global last_mouse_activity
     while program_active:
         outlook_running = process_exists('OUTLOOK.exe')
         teams_running = process_exists('Teams.exe')
@@ -117,38 +162,62 @@ def check_for_new_mail_periodically():
         new_email_check()
         root.after(60000, check_for_new_mail_periodically)  # Schedule the function to run again in 60 seconds
 
+def on_closing():
+    global program_active
+    program_active = False
+    root.destroy()
+
 # Create the main Tkinter window
 root = tk.Tk()
 root.title("Outlook Auto-Opener")
 
-# Set the window size to 320x200 and make it a fixed size
-root.geometry("320x200")
+# Set the window size to 400x200 and make it a fixed size
+root.geometry("400x200")
 root.resizable(False, False)
 
 # Set the background color
 root.configure(bg="#0066a1")
 
+# Bind the window's close event to the on_closing function
+root.protocol("WM_DELETE_WINDOW", on_closing)
+
 # Create the Activate button
 activate_button = tk.Button(root, text="Activate", command=activate_program)
-activate_button.pack()
+activate_button.grid(row=0, column=0, padx=10, pady=10)
 
 # Create the Deactivate button
 deactivate_button = tk.Button(root, text="Deactivate", command=deactivate_program)
-deactivate_button.pack()
+deactivate_button.grid(row=0, column=1, padx=10, pady=10)
 
-# Create a label to display activation status
-activation_label = tk.Label(root, text="Program is not active", bg="#0066a1", fg="white")
-activation_label.pack()
+# Create a label to display program status
+activation_label = tk.Label(root, text="Program is not active", bg="white")
+activation_label.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
 
-# Create a checkbox for email checking
+# Create a checkbox for email checking with a #0066a1 background
 email_checking_checkbox_var = tk.BooleanVar()
-email_checking_checkbox = tk.Checkbutton(root, text="Check my mail", variable=email_checking_checkbox_var, command=toggle_email_checking)
-email_checking_checkbox.pack()
+email_checking_checkbox = tk.Checkbutton(
+    root,
+    text="Check my Mail",
+    variable=email_checking_checkbox_var,
+    command=toggle_email_checking,
+    bg="#0066a1",
+    activebackground="#0066a1",
+    selectcolor="green"
+)
+email_checking_checkbox.grid(row=2, column=0, padx=10, pady=10)
 
-# Create a checkbox for mouse movement
+# Create a checkbox for mouse movement with a #0066a1 background
 mouse_moving_checkbox_var = tk.BooleanVar()
-mouse_moving_checkbox = tk.Checkbutton(root, text="Move my mouse", variable=mouse_moving_checkbox_var, command=toggle_mouse_moving)
-mouse_moving_checkbox.pack()
+mouse_moving_checkbox = tk.Checkbutton(
+    root,
+    text="Move my mouse",
+    variable=mouse_moving_checkbox_var,
+    command=toggle_mouse_moving,
+    bg="#0066a1",
+    activebackground="#0066a1",
+    selectcolor="green"
+)
+mouse_moving_checkbox.grid(row=2, column=1, padx=10, pady=10)
 
 # Start the Tkinter main loop
 root.mainloop()
