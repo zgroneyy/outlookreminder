@@ -72,9 +72,9 @@ def mouse_mover():
 
 def update_activation_label():
     if program_active or email_checking_active or mouse_moving_active:
-        activation_label.config(text="Work is being done, be patient!")
+        activation_label.config(text="Work is being done, be patient!", font=("Helvetica", 14))
     else:
-        activation_label.config(text="Program is not active")
+        activation_label.config(text="Program is not active", font=("Helvetica", 14))
 
 def toggle_email_checking():
     global email_checking_active
@@ -171,8 +171,8 @@ def on_closing():
 root = tk.Tk()
 root.title("Outlook Auto-Opener")
 
-# Set the window size to 400x200 and make it a fixed size
-root.geometry("400x200")
+# Set the window size to 200x350 and make it a fixed size
+root.geometry("350x300")
 root.resizable(False, False)
 
 # Set the background color
@@ -181,17 +181,17 @@ root.configure(bg="#0066a1")
 # Bind the window's close event to the on_closing function
 root.protocol("WM_DELETE_WINDOW", on_closing)
 
+# Create a label to display program status
+activation_label = tk.Label(root, text="Program is not active", bg="white", font=("Helvetica", 14))
+activation_label.pack(pady=10)
+
 # Create the Activate button
-activate_button = tk.Button(root, text="Activate", command=activate_program)
-activate_button.grid(row=0, column=0, padx=10, pady=10)
+activate_button = tk.Button(root, text="Activate", command=activate_program, width=10)
+activate_button.pack(padx=10, pady=10)
 
 # Create the Deactivate button
-deactivate_button = tk.Button(root, text="Deactivate", command=deactivate_program)
-deactivate_button.grid(row=0, column=1, padx=10, pady=10)
-
-# Create a label to display program status
-activation_label = tk.Label(root, text="Program is not active", bg="white")
-activation_label.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
+deactivate_button = tk.Button(root, text="Deactivate", command=deactivate_program, width=10)
+deactivate_button.pack(padx=10, pady=10)
 
 # Create a checkbox for email checking with a #0066a1 background
 email_checking_checkbox_var = tk.BooleanVar()
@@ -202,9 +202,9 @@ email_checking_checkbox = tk.Checkbutton(
     command=toggle_email_checking,
     bg="#0066a1",
     activebackground="#0066a1",
-    selectcolor="green"
+    selectcolor="#0066a1"
 )
-email_checking_checkbox.grid(row=2, column=0, padx=10, pady=10)
+email_checking_checkbox.pack(padx=10, pady=10)
 
 # Create a checkbox for mouse movement with a #0066a1 background
 mouse_moving_checkbox_var = tk.BooleanVar()
@@ -215,9 +215,9 @@ mouse_moving_checkbox = tk.Checkbutton(
     command=toggle_mouse_moving,
     bg="#0066a1",
     activebackground="#0066a1",
-    selectcolor="green"
+    selectcolor="#0066a1"
 )
-mouse_moving_checkbox.grid(row=2, column=1, padx=10, pady=10)
+mouse_moving_checkbox.pack(padx=10, pady=10)
 
 # Start the Tkinter main loop
 root.mainloop()
