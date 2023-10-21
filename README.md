@@ -27,7 +27,7 @@ Automatically manage your Microsoft Outlook and Teams applications with this Pyt
 ## Installation
 1. Clone the repository to your local machine using the following command:
    ```shell
-   git clone https://github.com/yourusername/outlook-teams-auto-opener.git
+   git clone https://github.com/zgroneyy/outlook-teams-auto-opener.git
    ```
 2. Navigate to the project directory:
    ```shell
@@ -56,6 +56,3 @@ Automatically manage your Microsoft Outlook and Teams applications with this Pyt
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 ```
 
-Make sure to replace "yourusername" in the Git clone URL with your actual GitHub username or the repository's URL.
-
-You can include this README file in the root directory of your project, and it will provide an overview of your project, its features, installation instructions, and licensing information for potential users and contributors.
