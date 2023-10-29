@@ -27,11 +27,11 @@ Automatically manage your Microsoft Outlook and Teams applications with this Pyt
 ## Installation
 1. Clone the repository to your local machine using the following command:
    ```shell
-   git clone https://github.com/zgroneyy/outlook-teams-auto-opener.git
+   git clone https://github.com/zgroneyy/outlookreminder
    ```
 2. Navigate to the project directory:
    ```shell
-   cd outlook-teams-auto-opener
+   cd outlookreminder
    ```
 3. Install the required Python libraries if you haven't already:
    ```shell
